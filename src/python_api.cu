@@ -125,9 +125,41 @@ pybind11::dict Testbed::compute_marching_cubes_mesh(Eigen::Vector3i res3d, Bound
 	return py::dict("V"_a=cpuverts, "N"_a=cpunormals, "C"_a=cpucolors, "F"_a=cpuindices);
 }
 
+void my_glfw_error_callback(int error, const char* description) {
+	tlog::error() << "GLFW error #" << error << ": " << description;
+}
+
 py::array_t<float> Testbed::render_to_cpu(int width, int height, int spp, bool linear, float start_time, float end_time, float fps, float shutter_fraction) {
+	// here we enable dlss
+	// glfw seems to be required
+	tlog::info() << "[***] custom glfw init";
+	glfwSetErrorCallback(my_glfw_error_callback);
+	if (!glfwInit()) {
+		throw std::runtime_error{"GLFW could not be initialized."};
+	}
+#ifdef NGP_VULKAN
+	tlog::info() << "[***] custom enable dlss";
+	try {
+		vulkan_and_ngx_init();
+		m_dlss_supported = true;
+	} catch (const std::runtime_error& e) {
+		tlog::warning() << "Could not initialize Vulkan and NGX. DLSS not supported. (" << e.what() << ")";
+	}
+#else
+	m_dlss_supported = false;
+#endif
+
 	m_windowless_render_surface.resize({width, height});
 	m_windowless_render_surface.reset_accumulation();
+
+	// enable dlss
+	tlog::info() << "[***] custom enable dlss for render buffer";
+	m_windowless_render_surface.enable_dlss({1920, 1080});
+	auto render_res = m_windowless_render_surface.in_resolution();
+	if (m_windowless_render_surface.dlss()) {
+		render_res = m_windowless_render_surface.dlss()->clamp_resolution(render_res);
+	}
+	m_windowless_render_surface.resize(render_res);
 
 	if (end_time < 0.f) {
 		end_time = start_time;
@@ -176,6 +208,10 @@ py::array_t<float> Testbed::render_to_cpu(int width, int height, int spp, bool l
 
 	// For cam smoothing when rendering the next frame.
 	m_smoothed_camera = end_cam_matrix;
+
+	// correct the width and height
+	height = 1080;
+	width = 1920;
 
 	py::array_t<float> result({height, width, 4});
 	py::buffer_info buf = result.request();
