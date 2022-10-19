@@ -25,6 +25,7 @@
 #include <neural-graphics-primitives/trainable_buffer.cuh>
 #include <neural-graphics-primitives/triangle_bvh.cuh>
 #include <neural-graphics-primitives/triangle_octree.cuh>
+#include <neural-graphics-primitives/npy.hpp>
 
 #include <tiny-cuda-nn/encodings/grid.h>
 #include <tiny-cuda-nn/loss.h>
@@ -2781,6 +2782,15 @@ void Testbed::render_frame(const Matrix<float, 3, 4>& camera_matrix0, const Matr
 	render_buffer.set_color_space(m_color_space);
 	render_buffer.set_tonemap_curve(m_tonemap_curve);
 
+	const std::vector<long unsigned> shape{360, 640};
+	const bool fortran_order{false};
+    const std::string path{"depth.npy"};
+	// try to save depth_buffer here?
+	std::cout << "save depth buffer..." << std::endl;
+	auto depth_buffer_h = render_buffer.depth_buffer_host();
+	std::cout << "depth buffer size: " << depth_buffer_h.size() << std::endl;
+	npy::SaveArrayAsNumpy(path, fortran_order, shape.size(), shape.data(), depth_buffer_h);	
+	
 	// Prepare DLSS data: motion vectors, scaled depth, exposure
 	if (render_buffer.dlss()) {
 		auto res = render_buffer.in_resolution();

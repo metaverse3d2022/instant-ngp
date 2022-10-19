@@ -16,6 +16,7 @@
 #include <neural-graphics-primitives/common.h>
 #include <neural-graphics-primitives/render_buffer.h>
 #include <neural-graphics-primitives/tinyexr_wrapper.h>
+#include <neural-graphics-primitives/npy.hpp>
 
 #include <tiny-cuda-nn/gpu_memory.h>
 
@@ -632,6 +633,16 @@ void CudaRenderBuffer::tonemap(float exposure, const Array4f& background_color, 
 	auto res = m_dlss ? in_resolution() : out_resolution();
 	const dim3 threads = { 16, 8, 1 };
 	const dim3 blocks = { div_round_up((uint32_t)res.x(), threads.x), div_round_up((uint32_t)res.y(), threads.y), 1 };
+	
+	const std::vector<long unsigned> shape{360, 640, 4};
+	const bool fortran_order{false};
+    const std::string path{"accumulate.npy"};
+	// try to save depth_buffer here?
+	std::cout << "save accumulate buffer..." << std::endl;
+	auto accumulate_buffer_h = accumulate_buffer_host();
+	std::cout << "accumulate buffer size: " << accumulate_buffer_h.size() << std::endl;
+	npy::SaveArrayAsNumpy(path, fortran_order, shape.size(), shape.data(), accumulate_buffer_h);
+
 	tonemap_kernel<<<blocks, threads, 0, stream>>>(
 		res,
 		exposure,

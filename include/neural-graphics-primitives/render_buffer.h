@@ -194,8 +194,29 @@ public:
 		return m_depth_buffer.data();
 	}
 
+	std::vector<float> depth_buffer_host() {
+		std::vector<float> depth_buffer_h(m_depth_buffer.size(), 0.);
+		m_depth_buffer.copy_to_host(&depth_buffer_h[0]);
+		return depth_buffer_h;
+	}
+
 	Eigen::Array4f* accumulate_buffer() const {
 		return m_accumulate_buffer.data();
+	}
+
+	std::vector<float> accumulate_buffer_host() {
+		auto s = m_accumulate_buffer.size();
+		std::vector<float> accumulate_buffer_v(s*4, 0.);
+		Eigen::Array4f *accumulate_buffer_h;
+		accumulate_buffer_h = (Eigen::Array4f*)malloc(sizeof(Eigen::Array4f) * s);
+		m_accumulate_buffer.copy_to_host(accumulate_buffer_h);
+		for (int i=0; i<s; i++) {
+			for (int j=0; j<4; j++) {
+				accumulate_buffer_v[i*4+j] = accumulate_buffer_h[i](j);
+			}
+		}
+		free(accumulate_buffer_h);
+		return accumulate_buffer_v;
 	}
 
 	void clear_frame(cudaStream_t stream);
