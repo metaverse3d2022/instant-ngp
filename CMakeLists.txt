@@ -292,7 +292,9 @@ target_link_directories(ngp PUBLIC ${NGP_LINK_DIRECTORIES})
 target_link_libraries(ngp PUBLIC ${NGP_LIBRARIES} tiny-cuda-nn)
 
 add_executable(testbed src/main.cu)
+add_executable(testbed_dlss src/main_dlss.cu)
 target_link_libraries(testbed PRIVATE ngp)
+target_link_libraries(testbed_dlss PRIVATE ngp)
 
 # Copy DLSS shared libraries
 if (NGP_VULKAN)

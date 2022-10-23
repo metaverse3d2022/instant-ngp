@@ -634,14 +634,23 @@ void CudaRenderBuffer::tonemap(float exposure, const Array4f& background_color, 
 	const dim3 threads = { 16, 8, 1 };
 	const dim3 blocks = { div_round_up((uint32_t)res.x(), threads.x), div_round_up((uint32_t)res.y(), threads.y), 1 };
 	
-	const std::vector<long unsigned> shape{360, 640, 4};
-	const bool fortran_order{false};
+	//const std::vector<long unsigned> shape{360, 640, 4};
+	//const bool fortran_order{false};
     const std::string path{"accumulate.npy"};
 	// try to save depth_buffer here?
-	std::cout << "save accumulate buffer..." << std::endl;
-	auto accumulate_buffer_h = accumulate_buffer_host();
-	std::cout << "accumulate buffer size: " << accumulate_buffer_h.size() << std::endl;
-	npy::SaveArrayAsNumpy(path, fortran_order, shape.size(), shape.data(), accumulate_buffer_h);
+	//std::cout << "save accumulate buffer..." << std::endl;
+	//auto accumulate_buffer_h = accumulate_buffer_host();
+	//std::cout << "accumulate buffer size: " << accumulate_buffer_h.size() << std::endl;
+	//npy::SaveArrayAsNumpy(path, fortran_order, shape.size(), shape.data(), accumulate_buffer_h);
+
+	// try to load depth_buffer here
+	std::cout << "load accumulate buffer..." << std::endl;
+	std::vector<float> data;
+	std::vector<unsigned long> shape;
+	bool is_fortran;
+	npy::LoadArrayFromNumpy(path, shape, is_fortran, data);
+	std::cout << "accumulate buffer size: " << data.size() << std::endl;
+	host_to_accumulate_buffer(data, data.size()/4);
 
 	tonemap_kernel<<<blocks, threads, 0, stream>>>(
 		res,

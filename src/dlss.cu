@@ -151,7 +151,7 @@ void vulkan_and_ngx_init() {
 	auto try_add_layer = [&](const char* layer) {
 		for (const auto& props : available_layers) {
 			if (strcmp(layer, props.layerName)) {
-				layers.emplace_back(layer);
+				//layers.emplace_back(layer);
 				return true;
 			}
 		}

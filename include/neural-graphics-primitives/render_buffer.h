@@ -200,6 +200,11 @@ public:
 		return depth_buffer_h;
 	}
 
+	void host_to_depth_buffer(std::vector<float> depth_buffer_h) {
+		m_depth_buffer.resize(depth_buffer_h.size());
+		m_depth_buffer.copy_from_host(depth_buffer_h);
+	}
+
 	Eigen::Array4f* accumulate_buffer() const {
 		return m_accumulate_buffer.data();
 	}
@@ -217,6 +222,17 @@ public:
 		}
 		free(accumulate_buffer_h);
 		return accumulate_buffer_v;
+	}
+
+	void host_to_accumulate_buffer(std::vector<float> accumulate_buffer_h, int size) {
+		std::vector<Eigen::Array4f> accumulate_buffer_v(size);
+		for (int i=0; i<size; i++) {
+			for (int j=0; j<4; j++) {
+				accumulate_buffer_v[i](j) = accumulate_buffer_h[i*4+j];
+			}
+		}
+		m_accumulate_buffer.resize(size);
+		m_accumulate_buffer.copy_from_host(accumulate_buffer_v);
 	}
 
 	void clear_frame(cudaStream_t stream);
